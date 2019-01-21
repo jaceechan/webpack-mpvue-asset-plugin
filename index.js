@@ -10,6 +10,10 @@ const emitHandle = (compilation, callback) => {
     entryChunk.files.forEach(filePath => {
       const assetFile = compilation.assets[filePath]
       const extname = path.extname(filePath)
+
+      // sourcemap文件无需添加资源引用，否则报错
+      if (extname === '.map') { return }
+
       let content = assetFile.source()
 
       chunks.reverse().forEach(chunk => {
@@ -22,9 +26,11 @@ const emitHandle = (compilation, callback) => {
             }
 
             if (/^(\.wxss)|(\.ttss)|(\.acss)|(\.css)$/.test(extname)) {
-              content = `@import "${relativePath}"\n${content}`
+              // @improt语句必须加上;否则开发工具解析有问题
+              content = `@import "${relativePath}";\n${content}`;
             } else {
-              content = `require("${relativePath}")\n${content}`
+              // require后需要加上;否则开发工具解析有问题
+              content = `require("${relativePath}");\n${content}`;
             }
           }
         })
@@ -35,7 +41,7 @@ const emitHandle = (compilation, callback) => {
   callback()
 }
 
-function MpvuePlugin() {}
+function MpvuePlugin() { }
 MpvuePlugin.prototype.apply = compiler => compiler.plugin('emit', emitHandle)
 
 module.exports = MpvuePlugin
